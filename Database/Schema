@@ -1,0 +1,93 @@
+
+create database bus;
+use bus;
+-- USERS TABLE 
+CREATE TABLE users (
+    user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL UNIQUE,
+    role ENUM('ADMIN', 'USER') NOT NULL DEFAULT 'USER',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ROUTES TABLE 
+CREATE TABLE routes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    from_location VARCHAR(100) NOT NULL,
+    to_location VARCHAR(100) NOT NULL,
+    distance_km INT,
+    duration_of_travel_minutes INT,
+    price DECIMAL(10,2) NOT NULL,
+    UNIQUE(from_location, to_location)
+);
+
+-- BUSES TABLE
+CREATE TABLE buses (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    bus_name VARCHAR(100) NOT NULL,
+    bus_number VARCHAR(50) NOT NULL UNIQUE,
+    bus_type VARCHAR(50) NOT NULL,
+    total_seats INT NOT NULL CHECK (total_seats > 0)
+);
+
+-- SCHEDULES TABLE
+CREATE TABLE schedules (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    bus_id BIGINT NOT NULL,
+    route_id BIGINT NOT NULL,
+    travel_date DATE NOT NULL,
+    departure TIME NOT NULL,
+    arrival TIME NOT NULL,
+    available_seats INT DEFAULT 0 CHECK (available_seats >= 0),
+
+    FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE RESTRICT,
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE RESTRICT
+);
+
+-- BOOKING TABLE
+CREATE TABLE booking (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    schedule_id BIGINT NOT NULL,
+    booking_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10,2) NOT NULL,
+    no_of_seats INT NOT NULL, 
+    status ENUM('CONFIRMED', 'CANCELLED') DEFAULT 'CONFIRMED',
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE
+);
+
+-- PASSENGERS TABLE
+CREATE TABLE passengers (
+    passenger_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    passenger_name VARCHAR(100) NOT NULL,
+    age INT NOT NULL CHECK (age BETWEEN 0 AND 120),
+    gender ENUM('M', 'F', 'O') NOT NULL,
+    booking_id BIGINT NOT NULL,
+    seat_number INT NOT NULL,
+
+    FOREIGN KEY (booking_id) REFERENCES booking(id) ON DELETE CASCADE,
+    UNIQUE (booking_id, seat_number)
+);
+
+-- CANCELLATION TABLE
+CREATE TABLE cancellation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    booking_id BIGINT NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL,
+    cancel_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    refund_amount DECIMAL(10,2) NOT NULL,
+
+    FOREIGN KEY (booking_id) REFERENCES booking(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT
+); 
+
+--To Create Admin(Update using queries in workbench or CLI not on user interface)
+--After Registration of a user, use the below query to set a user as admin
+update users 
+set role= "ADMIN"
+where user_id = 22;
+
